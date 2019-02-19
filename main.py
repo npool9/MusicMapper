@@ -16,6 +16,8 @@ class Main:
         """
         self.sheet_music_path = "/Users/nathanpool/Desktop/Projects4Fun/Music/Datasets/SheetMusic/"
         self.midi_path = "/Users/nathanpool/Desktop/Projects4Fun/Music/Datasets/Midis/"
+        # self.sheet_music_path = "/Users/nathanpool/Desktop/AI2/Scales/Sheet Music/"
+        # self.midi_path = "/Users/nathanpool/Desktop/AI2/Scales/Midis/"
 
 
 if __name__ == "__main__":

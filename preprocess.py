@@ -19,6 +19,7 @@ class Preprocess:
         self.midi_path = midi_path
 
         self.composers = ['F. F. Chopin', 'W. A. Mozart', 'C. Debussy']
+        # self.composers = [""]
 
         self.sheet_music = []
         self.midis = []
@@ -35,7 +36,7 @@ class Preprocess:
         for composer in self.composers:
             sheet_path = self.sheet_music_path + composer + '/'
             for file in os.listdir(sheet_path):
-                if file.endswith('.jpg'):
+                if file.endswith('.jpg') or file.endswith('.png'):
                     sheet_paths.append(sheet_path + file)
             midi_path = self.midi_path + composer + '/'
             for file in os.listdir(midi_path):
@@ -52,6 +53,8 @@ class Preprocess:
         #  order, load the images, and concatenate them into one so that there is a one-one relationship from sheet
         #  music to midi file.
         global_names = self.find_matches(sheet_paths, midi_paths)
+        print("Sheet Paths:", sheet_paths)
+        print("Midi Paths:", midi_paths)
         count = 0
         for name in global_names:
             image_group = []
@@ -90,6 +93,7 @@ class Preprocess:
             # load the file into the dataset
             midi = music21.converter.parse(the_midi)
             self.midis.append(midi)
+            # play a sample midi corresponding to the score that is concatenated and displayed above
             if count == 1:
                 music21.midi.realtime.StreamPlayer(midi).play()
                 count += 1
@@ -119,6 +123,7 @@ class Preprocess:
             # parse out the name of the piece from the sheet music file, but get rid of 'Page' at the end of the string
             slash_index = sheet.rfind('/')
             page_index = sheet.rfind('Page')
+            # page_index = sheet.rfind('.')
             global_name = sheet[slash_index+1:page_index]
             sheet_names.add(global_name)
         midi_names = sorted(midi_names)
