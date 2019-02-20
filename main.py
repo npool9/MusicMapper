@@ -23,8 +23,8 @@ class Main:
 
 if __name__ == "__main__":
     main = Main()
-
     preprocess = Preprocess(main.sheet_music_path, main.midi_path)
+    
     if not os.path.isfile('midi_vectors.pickle') or not os.path.isfile('sheet_matrices.pickle'):
         preprocess.load_data()
         preprocess.get_vectors()
