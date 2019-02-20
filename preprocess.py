@@ -18,8 +18,9 @@ class Preprocess:
         self.sheet_music_path = sheet_music_path
         self.midi_path = midi_path
 
-        self.composers = ['F. F. Chopin', 'W. A. Mozart', 'C. Debussy']
-        # self.composers = [""]
+        # self.composers = ['F. F. Chopin', 'W. A. Mozart', 'C. Debussy']
+        self.composers = [""]
+        # self.composers = ['C. Debussy']
 
         self.sheet_music = []
         self.midis = []
@@ -78,7 +79,7 @@ class Preprocess:
                 x_offset += im.size[0]
             # display the an example stitched score
             if len(image_group) > 1 and count == 0:
-                score.show()
+                # score.show()
                 count += 1
             # append to the in-memory sheet music dataset
             self.sheet_music.append(score)
@@ -95,7 +96,7 @@ class Preprocess:
             self.midis.append(midi)
             # play a sample midi corresponding to the score that is concatenated and displayed above
             if count == 1:
-                music21.midi.realtime.StreamPlayer(midi).play()
+                # music21.midi.realtime.StreamPlayer(midi).play()
                 count += 1
         print("Dataset constructions complete.")
 
@@ -122,8 +123,8 @@ class Preprocess:
         for sheet in sheet_files:
             # parse out the name of the piece from the sheet music file, but get rid of 'Page' at the end of the string
             slash_index = sheet.rfind('/')
-            page_index = sheet.rfind('Page')
-            # page_index = sheet.rfind('.')
+            # page_index = sheet.rfind('Page')
+            page_index = sheet.rfind('.png')
             global_name = sheet[slash_index+1:page_index]
             sheet_names.add(global_name)
         midi_names = sorted(midi_names)
@@ -139,4 +140,31 @@ class Preprocess:
                 midi_names.remove(name)
         print("These lists are now equal:", sheet_names == midi_names)
         return sheet_names
+
+    def get_vectors(self):
+        """
+        Given the list of midi files that we just created, now convert them to their vector form so that we can properly
+        train our models. Simply overwrite self.midis to have a list of vectors instead of a list of midis
+        """
+        for i in range(len(self.midis)):
+            notes = []
+            midi = self.midis[i]
+            try:
+                # Given a single stream, partition into a part for each unique instrument
+                parts = music21.instrument.partitionByInstrument(midi)
+            except:
+                pass
+            if parts:  # if parts has instrument parts
+                notes_to_parse = parts.parts[0].recurse()
+            else:
+                notes_to_parse = midi.flat.notes
+            for element in notes_to_parse:
+                if isinstance(element, music21.note.Note):
+                    # if element is a note, extract pitch
+                    notes.append(str(element.pitch))
+                elif isinstance(element, music21.chord.Chord):
+                    # if element is a chord, append the normal form of the
+                    # chord (a list of integers) to the list of notes.
+                    notes.append('.'.join(str(n) for n in element.normalOrder))
+            self.midis[i] = notes
 
