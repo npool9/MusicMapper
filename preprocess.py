@@ -168,3 +168,14 @@ class Preprocess:
                     notes.append('.'.join(str(n) for n in element.normalOrder))
             self.midis[i] = notes
 
+    def note_to_int(self):
+        """
+        Given each note in self.midis, assign each unique note  to  an integer
+        :return:
+        """
+        full_note_list = set()
+        for score in self.midis:
+            for note in score:
+                full_note_list.add(note)
+        full_note_list = sorted(full_note_list)
+        return dict((note, number) for number, note in enumerate(full_note_list))

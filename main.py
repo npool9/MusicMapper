@@ -24,7 +24,7 @@ class Main:
 if __name__ == "__main__":
     main = Main()
     preprocess = Preprocess(main.sheet_music_path, main.midi_path)
-    
+
     if not os.path.isfile('midi_vectors.pickle') or not os.path.isfile('sheet_matrices.pickle'):
         preprocess.load_data()
         preprocess.get_vectors()
@@ -36,3 +36,6 @@ if __name__ == "__main__":
         preprocess.midis = pickle.load(open('midi_vectors.pickle', 'rb'))
         print("Load cached sheet music")
         preprocess.sheet_music = pickle.load(open('sheet_matrices.pickle', 'rb'))
+
+    note_to_int = preprocess.note_to_int()
+    print(note_to_int)
