@@ -3,6 +3,7 @@ from preprocess import Preprocess
 import os.path
 import pickle
 
+
 class Main:
     """
     This is an experimental project to evaluate the performance of learning methods for mapping between two modalities:
@@ -39,4 +40,3 @@ if __name__ == "__main__":
 
     # get a note to integer mapping of each unique note in the set of scores
     note_to_int = preprocess.note_to_int()
-    print(note_to_int)
