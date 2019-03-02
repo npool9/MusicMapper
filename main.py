@@ -37,6 +37,7 @@ if __name__ == "__main__":
         preprocess.midis = pickle.load(open('midi_vectors.pickle', 'rb'))
         print("Load cached sheet music")
         preprocess.sheet_music = pickle.load(open('sheet_matrices.pickle', 'rb'))
+        print(preprocess.midis)
 
     # get a note to integer mapping of each unique note in the set of scores
     note_to_int = preprocess.note_to_int()

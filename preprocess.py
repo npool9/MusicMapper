@@ -24,6 +24,7 @@ class Preprocess:
 
         self.sheet_music = []
         self.midis = []
+        self.midi_lengths = []
 
     def load_data(self):
         """
@@ -144,10 +145,12 @@ class Preprocess:
     def get_vectors(self):
         """
         Given the list of midi files that we just created, now convert them to their vector form so that we can properly
-        train our models. Simply overwrite self.midis to have a list of vectors instead of a list of midis
+        train our models. Simply overwrite self.midis to have a list of vectors instead of a list of midis. These are
+        the pitch value vectors for each piece. Include rests.
         """
         for i in range(len(self.midis)):
             notes = []
+            note_lengths = []
             midi = self.midis[i]
             try:
                 # Given a single stream, partition into a part for each unique instrument
@@ -162,11 +165,18 @@ class Preprocess:
                 if isinstance(element, music21.note.Note):
                     # if element is a note, extract pitch
                     notes.append(str(element.pitch))
+                    note_lengths.append(float(element.duration.quarterLength))
                 elif isinstance(element, music21.chord.Chord):
                     # if element is a chord, append the normal form of the
                     # chord (a list of integers) to the list of notes.
                     notes.append('.'.join(str(n) for n in element.normalOrder))
+                    note_lengths.append(float(element.duration.quarterLength))
+                elif isinstance(element, music21.note.Rest):
+                    notes.append("rest")
+                    note_lengths.append(float(element.duration.quarterLength))
             self.midis[i] = notes
+            self.midi_lengths.append(note_lengths)
+            print(note_lengths)
 
     def note_to_int(self):
         """
