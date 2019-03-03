@@ -55,5 +55,8 @@ if __name__ == "__main__":
         output_notes[i] = preprocess.map(note_list, note_to_int)
         i += 1
 
-    model = Model(input_data, output_notes, output_durations)
+    model_class = Model(input_data, output_notes, output_durations)
+    network = model_class.build_model()
+    a_model = model_class.train(network)
+    model_class.test(a_model)
 

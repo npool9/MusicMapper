@@ -2,8 +2,10 @@
   <dictionary name="nathanpool">
     <words>
       <w>autoencoder</w>
+      <w>convolutional</w>
       <w>dataset</w>
       <w>datasets</w>
+      <w>keras</w>
       <w>nathanpool</w>
       <w>preprocess</w>
       <w>preprocessing</w>
