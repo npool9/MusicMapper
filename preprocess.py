@@ -176,7 +176,6 @@ class Preprocess:
                     note_lengths.append(float(element.duration.quarterLength))
             self.midis[i] = notes
             self.midi_lengths.append(note_lengths)
-            print(note_lengths)
 
     def note_to_int(self):
         """

@@ -32,6 +32,7 @@ if __name__ == "__main__":
         # get score vectors of notes and save them to a data path
         pickle.dump(preprocess.midis, open('midi_vectors.pickle', 'wb'))
         pickle.dump(preprocess.sheet_music, open('sheet_matrices.pickle', 'wb'))
+        pickle.dump(preprocess.midi_lengths, open('midi_length_vectors.pickle', 'wb'))
     else:
         print("Load cached midi vectors")
         preprocess.midis = pickle.load(open('midi_vectors.pickle', 'rb'))
