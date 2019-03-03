@@ -1,6 +1,6 @@
 import numpy as np
-from PIL import Image
 import keras
+
 
 class Model:
     """
@@ -15,12 +15,14 @@ class Model:
         :param output_notes: a list of note lists where each note is an integer and each list is a piece of music
         :param output_durations: a list of durations lists where each float corresponds to a note in a piece of music
         """
-        self.input_data = input_data
-        self.output_notes = output_notes
-        self.output_durations = output_durations
         self.n_pieces = len(input_data)
+
+        self.input_data = self.convert_to_np(input_data)
+        self.output_notes = self.convert_to_np(output_notes)
+        self.output_durations = self.convert_to_np(output_durations)
+
         # assuming each input image is of the same dimension
-        self.input_size = self.input_data[0].shape[0] * self.input_data[0].shape[1]
+        self.input_size = self.input_data[0].shape[0]
         # assuming each output song if of the same length (number of notes)
         self.output_size = len(self.output_durations[0])
 
@@ -37,11 +39,24 @@ class Model:
         """
         for i in range(self.n_pieces):
             output_notes[i] = keras.utils.to_categorical(output_notes[i])
-            print(output_notes[i])
         return output_notes
+
+    def convert_to_np(self, data_list):
+        """
+        Convert a list of lists of data to a list of numpy vectors for training and testing
+        :param data_list: a list of lists of data (each inner list is a different training/test example)
+        :return: a list of numpy vectors
+        """
+        for i in range(self.n_pieces):
+            if type(data_list[i]) is not list:  # then the input data is image
+                data_list[i] = np.array(data_list[i]).flatten()
+            else:
+                data_list[i] = np.array(data_list[i])
+        return data_list
 
     def build_model(self):
         """
         Define the model architectures for mapping PIL image input to one-hot-encoded note output as well as for mapping
         PIL image input to float vector note duration output.
         """
+        inputs = keras.layers.Input(shape=())
