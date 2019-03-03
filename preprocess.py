@@ -188,3 +188,16 @@ class Preprocess:
                 full_note_list.add(note)
         full_note_list = sorted(full_note_list)
         return dict((note, number) for number, note in enumerate(full_note_list))
+
+    def map(self, note_list, note_mapping):
+        """
+        Map a song's notes (string represented) to integers
+        :param note_list: a list of notes (as strings) corresponding to a piece/song
+        :param note_mapping: the mapping from string representations of notes to numbers interpretable by a model
+        :return: a list of integer-notes corresponding to the input piece/song
+        """
+        i = 0
+        for note in note_list:
+            note_list[i] = note_mapping[note]
+            i += 1
+        return note_list

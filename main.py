@@ -2,6 +2,7 @@ import numpy as np
 from preprocess import Preprocess
 import os.path
 import pickle
+from model import Model
 
 
 class Main:
@@ -38,7 +39,21 @@ if __name__ == "__main__":
         preprocess.midis = pickle.load(open('midi_vectors.pickle', 'rb'))
         print("Load cached sheet music")
         preprocess.sheet_music = pickle.load(open('sheet_matrices.pickle', 'rb'))
-        print(preprocess.midis)
+        print("Load cached note duration vectors")
+        preprocess.midi_lengths = pickle.load(open('midi_length_vectors.pickle', 'rb'))
 
     # get a note to integer mapping of each unique note in the set of scores
     note_to_int = preprocess.note_to_int()
+
+    input_data = preprocess.sheet_music
+    output_notes = preprocess.midis
+    output_durations = preprocess.midi_lengths
+
+    # map from output_data_audio strings to numbers according to the note_to_int dictionary
+    i = 0
+    for note_list in output_notes:
+        output_notes[i] = preprocess.map(note_list, note_to_int)
+        i += 1
+
+    model = Model(input_data, output_notes, output_durations)
+
