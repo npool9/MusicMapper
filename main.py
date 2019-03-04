@@ -45,15 +45,20 @@ if __name__ == "__main__":
     # get a note to integer mapping of each unique note in the set of scores
     note_to_int = preprocess.note_to_int()
 
-    input_data = preprocess.sheet_music
-    output_notes = preprocess.midis
-    output_durations = preprocess.midi_lengths
+    aug_num = 9
+    input_data = preprocess.augment(preprocess.sheet_music, augs=aug_num)
+    # increase size based on number of augmentations applied to input data
+    output_notes = preprocess.midis + preprocess.midis * aug_num
+    output_durations = preprocess.midi_lengths + preprocess.midi_lengths * aug_num
 
     # map from output_data_audio strings to numbers according to the note_to_int dictionary
-    i = 0
+    j = 0
+    print(output_notes)
     for note_list in output_notes:
-        output_notes[i] = preprocess.map(note_list, note_to_int)
-        i += 1
+        output_notes[j] = [note_to_int[note] for note in note_list]
+        j += 1
+    print(note_to_int)
+    print(output_notes)
 
     model_class = Model(input_data, output_notes, output_durations)
     network = model_class.build_model()

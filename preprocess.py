@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 import os
 import music21
+from scipy.ndimage import zoom
+import random
 
 
 class Preprocess:
@@ -189,15 +191,89 @@ class Preprocess:
         full_note_list = sorted(full_note_list)
         return dict((note, number) for number, note in enumerate(full_note_list))
 
-    def map(self, note_list, note_mapping):
+    def clipped_zoom(self, img, zoom_factor, **kwargs):
         """
-        Map a song's notes (string represented) to integers
-        :param note_list: a list of notes (as strings) corresponding to a piece/song
-        :param note_mapping: the mapping from string representations of notes to numbers interpretable by a model
-        :return: a list of integer-notes corresponding to the input piece/song
+        Zoom in our out of an image but keep its initial dimensions
+        :param zoom_factor: factor by which we zoom in/out on the image
+        :param kwargs:
+        :return:
         """
-        i = 0
-        for note in note_list:
-            note_list[i] = note_mapping[note]
-            i += 1
-        return note_list
+        h, w = img.shape[:2]
+
+        # For multichannel images we don't want to apply the zoom factor to the RGB
+        # dimension, so instead we create a tuple of zoom factors, one per array
+        # dimension, with 1's for any trailing dimensions after the width and height.
+        zoom_tuple = (zoom_factor,) * 2 + (1,) * (img.ndim - 2)
+
+        # Zooming out
+        if zoom_factor < 1:
+
+            # Bounding box of the zoomed-out image within the output array
+            zh = int(np.round(h * zoom_factor))
+            zw = int(np.round(w * zoom_factor))
+            top = (h - zh) // 2
+            left = (w - zw) // 2
+
+            # Zero-padding
+            out = np.zeros_like(img)
+            out[top:top + zh, left:left + zw] = zoom(img, zoom_tuple, **kwargs)
+
+        # Zooming in
+        elif zoom_factor > 1:
+
+            # Bounding box of the zoomed-in region within the input array
+            zh = int(np.round(h / zoom_factor))
+            zw = int(np.round(w / zoom_factor))
+            top = (h - zh) // 2
+            left = (w - zw) // 2
+
+            out = zoom(img[top:top + zh, left:left + zw], zoom_tuple, **kwargs)
+
+            # `out` might still be slightly larger than `img` due to rounding, so
+            # trim off any extra pixels at the edges
+            trim_top = ((out.shape[0] - h) // 2)
+            trim_left = ((out.shape[1] - w) // 2)
+            out = out[trim_top:trim_top + h, trim_left:trim_left + w]
+
+        # If zoom_factor == 1, just return the input array
+        else:
+            out = img
+        return out
+
+    def augment(self, data_list, augs=5):
+        """
+        Given a list of data, perform some augmentations and append them to the input dataset to increase the amount of
+        training
+        :param data_list: a list of PIL images
+        :param augs: number of augmentations to perform on each image in the input dataset
+        :return: a list with augmentation additions to it
+        """
+        aug_data = []
+        augmentations = [random.choice(["noise", "zoom"]) for _ in range(augs)]
+        print("Original number of pieces:", len(data_list))
+        print("Augmentations:", augmentations)
+        print("Augmenting...")
+        for aug in augmentations:
+            if aug == 'noise':
+                print("Adding noise...")
+            elif aug == 'zoom':
+                print("Zooming out...")
+            for image in data_list:
+                if aug == 'noise':
+                    # add random noise to the image
+                    aug_image = np.array(image)  # temporarily make into numpy array
+                    aug_image = aug_image + np.random.normal(0, 1, aug_image.shape)
+                    aug_image = np.clip(aug_image, 0, 255)
+                    aug_image = Image.fromarray(aug_image)
+                elif aug == 'zoom':
+                    # Zoom out on the image but maintain its current dimensionality
+                    zoom_choices = [0.5, 0.6, 0.7, 0.8, 0.9]
+                    z = random.choice(zoom_choices)
+                    aug_image = np.array(image)  # temporarily make into numpy array
+                    aug_image = self.clipped_zoom(aug_image, zoom_factor=z)
+                    aug_image = Image.fromarray(aug_image)
+                aug_data.append(aug_image)
+        data_list += aug_data
+        print("Augmentation complete.")
+        print("Length of augmented training dataset:", len(data_list))
+        return data_list

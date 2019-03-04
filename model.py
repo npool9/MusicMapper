@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import pickle
 from keras.layers.advanced_activations import LeakyReLU
 import keras
+from keras.layers import Dropout
 
 
 class Model:
@@ -24,6 +25,7 @@ class Model:
         :param output_durations: a list of durations lists where each float corresponds to a note in a piece of music
         """
         self.n_pieces = len(input_data)
+        print("Number of pieces:", self.n_pieces)
 
         # self.input_data = np.array(self.convert_to_np(input_data))  # if vector (flattened) input
         self.input_data = np.array([np.array(im)[:, :-2] for im in input_data])  # if a matrix (image) input
@@ -39,21 +41,26 @@ class Model:
 
         # One-hot Encoding the output note data (integer labels of them are arbitrary and meaningless)
         self.output_notes = self.one_hot_encode(self.output_notes)
+        # One-hot encode durations as well since we're only considering quarter and whole notes/rests at the moment
+        self.output_durations = self.one_hot_encode(self.output_durations)
 
         # convert to numpy arrays of numpy arrays instead of lists of numpy arrays (better for keras/tf modeling)
         self.output_notes = np.array(self.output_notes)
+        self.output_notes = np.reshape(self.output_notes, self.output_notes.shape + (1,))
+        self.output_notes = np.asarray(self.output_notes, dtype=int)
         self.output_durations = np.array(self.output_durations)
+        self.output_durations = np.reshape(self.output_durations, self.output_durations.shape + (1,))
 
-    def one_hot_encode(self, output_notes):
+    def one_hot_encode(self, output):
         """
-        Given a list of vectors (lists), do a one hot encoding of each element of each vector because the integer label
-        of each note is completely arbitrary and has no true numerical value.
-        :param output_notes: the output_notes list of lists of notes (integers) where each inner list is a music piece
-        :return: a list of lists but the inner lists contain one-hot encodings of the notes
+        Given a list of vectors (lists), do a one hot encoding of each element of each vector because the label
+        of each element is completely arbitrary and has no true numerical value.
+        :param output: the output list of lists where each inner list is a music piece
+        :return: a list of lists but the inner lists contain one-hot encodings of the elements
         """
         for i in range(self.n_pieces):
-            output_notes[i] = utils.to_categorical(output_notes[i])
-        return output_notes
+            output[i] = utils.to_categorical(output[i])
+        return output
 
     def convert_to_np(self, data_list):
         """
@@ -78,23 +85,32 @@ class Model:
         if len(self.input_dim) > 1:  # input is a matrix
             the_model = models.Sequential()
             the_model.add(
-                Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=self.input_dim, padding='same'))
+                Conv2D(32, kernel_size=(2, 2), activation='linear', input_shape=self.input_dim, padding='same'))
             the_model.add(LeakyReLU(alpha=0.1))
             the_model.add(MaxPooling2D((2, 2), padding='same'))
-            the_model.add(Conv2D(64, (3, 3), activation='linear', padding='same'))
+            the_model.add(Conv2D(64, (2, 2), activation='linear', padding='same'))
             the_model.add(LeakyReLU(alpha=0.1))
             the_model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-            the_model.add(Conv2D(128, (3, 3), activation='linear', padding='same'))
+            the_model.add(Conv2D(128, (2, 2), activation='linear', padding='valid'))
             the_model.add(LeakyReLU(alpha=0.1))
             the_model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-            the_model.add(Flatten())
-            the_model.add(Dense(128, activation='linear'))
+            the_model.add(Conv2D(64, (5, 5), activation='linear', padding='same'))
             the_model.add(LeakyReLU(alpha=0.1))
-            the_model.add(Dense(self.output_durations.shape[1], activation='softmax'))
-
+            the_model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
+            the_model.add(Conv2D(32, (2, 2), activation='linear', padding='valid'))
+            the_model.add(LeakyReLU(alpha=0.1))
+            the_model.add(MaxPooling2D(pool_size=(6, 6), padding='same'))
+            the_model.add(UpSampling2D(size=(self.output_notes.shape[1], self.output_notes.shape[2]),
+                                       interpolation='nearest'))
+            the_model.add(MaxPooling2D(pool_size=(35, 27), padding='same'))
+            the_model.add(Dense(1, activation='relu'))
+            the_model.add(Dropout(0.2))
+            the_model.add(Dense(1, activation='softmax'))
+            # # the_model.add(Reshape((self.output_notes[1],)))
+            # the_model.add(Dense(self.output_notes[1:], activation='softmax'))
             the_model.summary()
 
-            the_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),
+            the_model.compile(loss='sparse_categorical_crossentropy', optimizer=keras.optimizers.Adam(),
                                   metrics=['accuracy'])
             return the_model
         else:  # input is a vector
@@ -103,7 +119,7 @@ class Model:
             x = Dense(32, activation='relu')(input_img)
             decoded = Dense(self.input_dim[0], activation='sigmoid')(x)
             autoencoder = models.Model(input_img, decoded)
-            autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+            autoencoder.compile(optimizer='adadelta', loss='sparse_categorical_crossentropy')
 
             return autoencoder
 
@@ -115,7 +131,7 @@ class Model:
         """
         # the model's training progress is being logged: here http://192.168.1.24:6006 /tmp/autoencoder
         print(self.input_data.shape)
-        model.fit(self.input_data, self.output_durations, epochs=50, shuffle=True)
+        model.fit(self.input_data, self.output_notes, epochs=50, batch_size=10, shuffle=True)
         pickle.dump(model, open('autoencoder.pickle', 'wb'))
         return model
 
